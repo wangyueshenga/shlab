@@ -32,7 +32,7 @@
 
 /* Global variables */
 extern char **environ;      /* defined in libc */
-char prompt[] = "tsh> ";    /* command line prompt (DO NOT CHANGE) */
+char prompt[] = "tsh> ";    /* command line prompt */
 int verbose = 0;            /* if true, print additional output */
 int nextjid = 1;            /* next job ID to allocate */
 char sbuf[MAXLINE];         /* for composing sprintf messages */
