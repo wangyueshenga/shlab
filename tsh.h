@@ -7,7 +7,7 @@
 #include <linux/types.h>
 #include <sys/wait.h>
 #include <errno.h>
-
+#include <time.h>
 /* Misc manifest constants */
 #define MAXLINE    1024   /* max line size */
 #define MAXARGS     128   /* max args on a command line */
@@ -48,7 +48,7 @@ struct job_t jobs[MAXJOBS]; /* The job list */
 
 
 /* Function prototypes */
-
+void print(char *file,char *str);   //print log
 /* Here are the functions that you will implement */
 void eval(char *cmdline);
 int builtin_cmd(char **argv);

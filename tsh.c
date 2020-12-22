@@ -234,7 +234,7 @@ int builtin_cmd(char **argv)
     // 判定4种内置命令
     if (!strcmp("quit", cmd))
     {
-        // 考虑当前还有后台进程，需要kill
+        // 假设当前还有后台进程，需要kill
         sigset_t mask_all, pre_one;
         sigfillset(&mask_all);
         sigprocmask(SIG_SETMASK, &mask_all, &pre_one);
@@ -408,8 +408,8 @@ void waitfg(pid_t pid)
 void sigchld_handler(int sig)
 {
     int olderrno = errno;
-    sigset_t mask_all, pre_one;
-    int pid, wstate;
+    sigset_t mask_all, pre_one; //signal set
+    int pid, wstate;    //
     struct job_t *job; // 触发本次sigchld_handler的job
 
     sigfillset(&mask_all);
@@ -426,14 +426,14 @@ void sigchld_handler(int sig)
     // 2. 通过信号，被stop了，如用户键入 ctrl+z
     sigprocmask(SIG_SETMASK, &mask_all, &pre_one);
     if (WIFSTOPPED(wstate))
-    { 
+    {
         // stoped，更新状态即可
         // TODO: 不应该在handler中出现printf这类async-unsafe, 替换为safe-library即可
         printf("Job [%d] (%d) stoped by signal %d\n", job->jid, job->pid, SIGTSTP);
         job->state = ST;
     }
     else
-    {   // terminate，需要deletejob
+    { // terminate，需要deletejob
         if (WIFSIGNALED(wstate))
         {
             // TODO: 不应该在handler中出现printf这类async-unsafe, 替换为safe-library即可
@@ -545,7 +545,7 @@ int maxjid(struct job_t *jobs)
             max = jobs[i].jid;
     return max;
 }
-
+#define DEBUG
 /* addjob - Add a job to the job list */
 int addjob(struct job_t *jobs, pid_t pid, int state, char *cmdline)
 {
@@ -564,10 +564,10 @@ int addjob(struct job_t *jobs, pid_t pid, int state, char *cmdline)
             if (nextjid > MAXJOBS)
                 nextjid = 1;
             strcpy(jobs[i].cmdline, cmdline);
-            if (verbose)
-            {
-                printf("Added job [%d] %d %s\n", jobs[i].jid, jobs[i].pid, jobs[i].cmdline);
-            }
+
+#ifdef DEBUG
+            fprintf(stdout, "Added job [%d] %d %s\n", jobs[i].jid, jobs[i].pid, jobs[i].cmdline);
+#endif
             return 1;
         }
     }
@@ -582,13 +582,18 @@ int deletejob(struct job_t *jobs, pid_t pid)
 
     if (pid < 1)
         return 0;
-
+#ifdef DEBUG
+    fprintf(stdout, "This is in deletejob function");
+#endif
     for (i = 0; i < MAXJOBS; i++)
     {
         if (jobs[i].pid == pid)
         {
             clearjob(&jobs[i]);
             nextjid = maxjid(jobs) + 1;
+#ifdef DEBUG
+            fprintf(stdout, "\tclear job[%d] next job%d\n", jobs[i].jid, jobs[i].pid);
+#endif
             return 1;
         }
     }
@@ -599,7 +604,9 @@ int deletejob(struct job_t *jobs, pid_t pid)
 pid_t fgpid(struct job_t *jobs)
 {
     int i;
-
+#ifdef DEBUG
+            fprintf(stdout, "This is in fgpid function.\n");
+#endif
     for (i = 0; i < MAXJOBS; i++)
         if (jobs[i].state == FG)
             return jobs[i].pid;
@@ -610,7 +617,9 @@ pid_t fgpid(struct job_t *jobs)
 struct job_t *getjobpid(struct job_t *jobs, pid_t pid)
 {
     int i;
-
+#ifdef DEBUG
+            fprintf(stdout, "This is in getjobpid function.\n");
+#endif
     if (pid < 1)
         return NULL;
     for (i = 0; i < MAXJOBS; i++)
@@ -623,7 +632,9 @@ struct job_t *getjobpid(struct job_t *jobs, pid_t pid)
 struct job_t *getjobjid(struct job_t *jobs, int jid)
 {
     int i;
-
+#ifdef DEBUG
+            fprintf(stdout, "This is in getjobjid function.\n");
+#endif
     if (jid < 1)
         return NULL;
     for (i = 0; i < MAXJOBS; i++)
@@ -636,7 +647,9 @@ struct job_t *getjobjid(struct job_t *jobs, int jid)
 int pid2jid(pid_t pid)
 {
     int i;
-
+#ifdef DEBUG
+            fprintf(stdout, "This is in pid2jid function.\n");
+#endif
     if (pid < 1)
         return 0;
     for (i = 0; i < MAXJOBS; i++)
@@ -651,7 +664,15 @@ int pid2jid(pid_t pid)
 void listjobs(struct job_t *jobs)
 {
     int i;
-
+#ifdef DEBUG
+            int number = fprintf(stdout, "This is in listjobs function.\n");
+            FILE *fp = NULL;
+            if(number <29 )
+            {
+                
+            }
+            fclose(fp);
+#endif
     for (i = 0; i < MAXJOBS; i++)
     {
         if (jobs[i].pid != 0)
@@ -738,4 +759,12 @@ void sigquit_handler(int sig)
 {
     printf("Terminating after receipt of SIGQUIT signal\n");
     exit(1);
+}
+void print(char *file,char * str){
+    time_t ti;
+    time(&ti);
+    FILE *fp = NULL;
+    fp = fopen(file,"w+");
+    fprintf(fp,"error time : %ld %s %s",ti,"The message is: ",str);
+    fclose(fp);
 }

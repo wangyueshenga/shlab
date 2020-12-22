@@ -1,0 +1,1 @@
+This will be output to the file named dump.txtthis will also be output to the file named dup.txt
